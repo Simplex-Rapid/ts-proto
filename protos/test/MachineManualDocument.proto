@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package Manuals;
+
+import "test/DatabaseCollectionDocumentBaseFields.proto";
+import "test/ts_proto_options.proto"; 
+
+/**
+ * Represents a manual of a machine as stored in the database.
+ */
+message MachineManualDocument {
+   option (ts_proto_options.mixins) = "MongoDb.DatabaseCollectionDocumentBaseFields";
+
+   /**
+    * Serial number of the machine.
+    */
+   string serialNumber = 5;
+ 
+   /**
+    * The version of the machine manual file.
+    */
+   string fileName = 6;
+
+}

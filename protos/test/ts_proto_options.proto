@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+import "google/protobuf/descriptor.proto";
+
+package ts_proto_options;
+
+extend google.protobuf.MessageOptions {
+  repeated string mixins = 50001;
+}

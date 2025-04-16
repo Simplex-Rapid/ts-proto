@@ -1151,9 +1151,26 @@ function generateInterfaceDeclaration(
   const { options, currentFile } = ctx;
   const chunks: Code[] = [];
 
+  console.error(`Generating interface: ${options.exportInterfaces ? "export" : "no export"} ${fullName}`);
+  console.warn(`Using inheritance: ${options.useInheritance}`);
+
   maybeAddComment(options, sourceInfo, chunks, messageDesc.options?.deprecated);
   // interface name should be defined to avoid import collisions
-  chunks.push(code`export interface ${def(fullName)} {`);
+  if (options.exportInterfaces) {
+    
+    chunks.push(code`export interface ${def(fullName)} {`);
+  } else if (options.useInheritance) {
+    const bases: string[] = (messageDesc.options as any) ?? [];
+
+    const baseString = bases.length > 0 ? bases.join(" & ") + " & " : "";
+
+    chunks.push(code`export type ${def(fullName)} = ${baseString}{`);
+
+  } else {
+    chunks.push(code`export type ${def(fullName)} = {`);
+  }
+
+  
 
   if (addTypeToMessages(options)) {
     chunks.push(code`$type${options.outputTypeAnnotations === "optional" ? "?" : ""}: '${fullTypeName}',`);

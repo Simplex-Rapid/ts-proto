@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+message MachineManualDocument {
+  string _id = 1;
+  string _createdDate = 2;
+  string _updatedDate = 3;
+  string _owner = 4;
+  string serialNumber = 5;
+  string fileName = 6;
+}
