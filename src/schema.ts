@@ -232,7 +232,7 @@ function getExtensionValue(ctx: Context, extension: FieldDescriptorProto, data: 
 }
 
 /** Takes the protoc's input of options as proto-encoded messages, and turns them into embedded-able-in-source-code representations. */
-function encodedOptionsToOptions(
+export function encodedOptionsToOptions(
   ctx: Context,
   extendee: string,
   encodedOptions?: { [key: number]: Uint8Array[] },

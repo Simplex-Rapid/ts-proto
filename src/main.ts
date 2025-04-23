@@ -1,4 +1,4 @@
-import { code, Code, conditionalOutput, def, imp, joinCode } from "ts-poet";
+import { code, Code, conditionalOutput, def, imp, Import, joinCode } from "ts-poet";
 import { ConditionalOutput } from "ts-poet/build/ConditionalOutput";
 import {
   DescriptorProto,
@@ -51,7 +51,7 @@ import {
   Options,
   ServiceOption,
 } from "./options";
-import { generateSchema } from "./schema";
+import { encodedOptionsToOptions, generateSchema } from "./schema";
 import SourceInfo, { Fields } from "./sourceInfo";
 import {
   basicLongWireType,
@@ -442,8 +442,10 @@ export function generateFile(ctx: Context, fileDesc: FileDescriptorProto): [stri
     chunks.push(generateDataLoadersType());
   }
 
+  const generatedSchema = generateSchema(ctx, fileDesc, sourceInfo)
+
   if (options.outputSchema) {
-    chunks.push(...generateSchema(ctx, fileDesc, sourceInfo));
+    chunks.push(...generatedSchema);
   }
 
   // https://www.typescriptlang.org/docs/handbook/2/modules.html:
@@ -1140,6 +1142,17 @@ function makeAssertionUtils(bytes: ReturnType<typeof makeByteUtils>) {
   return { fail };
 }
 
+function getExtendsList(ctx: Context, messageDesc: DescriptorProto): string | undefined {
+  let messageOptions: Code | undefined;
+  if (messageDesc.options) {
+    messageOptions = encodedOptionsToOptions(ctx, ".google.protobuf.MessageOptions", messageDesc.options._unknownFields);
+  }
+
+  const extendsList = messageOptions?.toString();
+
+  return extendsList;
+}
+
 // Create the interface with properties
 function generateInterfaceDeclaration(
   ctx: Context,
@@ -1152,8 +1165,32 @@ function generateInterfaceDeclaration(
   const chunks: Code[] = [];
 
   maybeAddComment(options, sourceInfo, chunks, messageDesc.options?.deprecated);
+
   // interface name should be defined to avoid import collisions
-  chunks.push(code`export interface ${def(fullName)} {`);
+  if (options.useMixins) {
+    const mixinsOptionsString = getExtendsList(ctx, messageDesc);
+    const inheritedTypes: Code[] = [];
+
+    if (mixinsOptionsString) {
+      const {mixins: mixinsRawString}: {mixins: string} = JSON.parse(mixinsOptionsString?.replace(/'/g, "\""));
+      console.warn("Mixins", mixinsRawString);
+      const mixins = mixinsRawString.split(",").map((m: string) => m.trim());
+
+      mixins.forEach((m: string) => {
+        const [_, name] = m.split("/");
+        const [type, __] = name.split(".");
+        const path = m.replace(".proto", "");
+
+        const importedType = impFile(options, `${type}@./${path}`);
+        inheritedTypes.push(code`${importedType}`)
+      });
+      
+    }
+    
+    chunks.push(code`export type ${def(fullName)} = ${joinCode(inheritedTypes, {on: "&"})} & {`);
+  } else {
+    chunks.push(code`export interface ${def(fullName)} {`);
+  }
 
   if (addTypeToMessages(options)) {
     chunks.push(code`$type${options.outputTypeAnnotations === "optional" ? "?" : ""}: '${fullTypeName}',`);
