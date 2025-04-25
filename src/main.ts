@@ -1177,9 +1177,14 @@ function generateInterfaceDeclaration(
       const mixins = mixinsRawString.split(",").map((m: string) => m.trim());
 
       mixins.forEach((m: string) => {
-        const [_, name] = m.split("/");
-        const [type, __] = name.split(".");
+        const names = m.split("/");
+        const name = names.pop();
+
+        const [type, _] = name!.split(".");
         const path = m.replace(".proto", "");
+
+        console.error('path', path);
+        console.error('type', type);
 
         const importedType = impFile(options, `${type}@./${path}`);
         inheritedTypes.push(code`${importedType}`)
